@@ -1,13 +1,105 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stacking ML Interactive Tutorial</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Stacking ML Visual Interactive Demo</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f7f8fa; margin: 0; padding: 0; }
+    #root { max-width: 1000px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); padding: 32px 24px; }
+    h1 { color: #2d3a4a; margin-bottom: 0.5em; }
+    h2 { color: #3b4b5c; margin-top: 2em; }
+    p, li { color: #444; line-height: 1.7; }
+    .viz-container { display: flex; flex-direction: column; align-items: center; margin: 32px 0; }
+    .base-row { display: flex; justify-content: center; gap: 60px; margin-bottom: 30px; }
+    .block { background: #f1f5f9; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); padding: 18px 24px; min-width: 120px; text-align: center; position: relative; }
+    .meta-block { background: #e0e7ff; border: 2px solid #6366f1; color: #3730a3; }
+    .arrow { width: 60px; height: 30px; display: flex; align-items: center; justify-content: center; }
+    .arrow svg { display: block; }
+    .weight-input { width: 40px; margin: 0 4px; }
+    .input-row { margin: 18px 0; }
+    .output-row { margin-top: 18px; font-size: 1.2em; color: #e11d48; }
+    .label { font-size: 0.95em; color: #555; }
+    .formula { background: #f3f4f6; border-radius: 6px; padding: 8px 12px; margin: 10px 0; font-family: monospace; color: #222; }
+    @media (max-width: 700px) { .base-row { flex-direction: column; gap: 20px; } .arrow { width: 30px; } }
+  </style>
 </head>
 <body>
   <div id="root"></div>
-  <script src="app.js"></script>
+  <script>
+    const root = document.getElementById('root');
+    function render(state) {
+      // Simulate base model predictions
+      const sample = state.sample;
+      const base1 = sample * 0.7 + 0.2;
+      const base2 = sample * 0.5 + 0.4;
+      const base3 = sample * 0.9 - 0.1;
+      const preds = [base1, base2, base3];
+      const meta = (base1 * state.weights[0] + base2 * state.weights[1] + base3 * state.weights[2]) / (state.weights[0] + state.weights[1] + state.weights[2]);
+      root.innerHTML = `
+        <h1>Stacking: Visual Interactive Demo</h1>
+        <p><b>Stacking</b> is an ensemble learning technique that combines multiple models (base learners) using a meta-learner. Adjust the input and weights to see how the meta-learner output changes!</p>
+        <div class="input-row">
+          <label>Input sample: <b>${sample.toFixed(2)}</b></label><br />
+          <input type="range" min="0" max="1" step="0.01" value="${sample}" id="sample-slider" style="width:300px;" />
+        </div>
+        <div class="viz-container">
+          <div class="base-row">
+            <div class="block">
+              <div class="label">Base Model 1</div>
+              <div>Prediction:<br><b style="color:#2563eb;">${base1.toFixed(2)}</b></div>
+            </div>
+            <div class="block">
+              <div class="label">Base Model 2</div>
+              <div>Prediction:<br><b style="color:#16a34a;">${base2.toFixed(2)}</b></div>
+            </div>
+            <div class="block">
+              <div class="label">Base Model 3</div>
+              <div>Prediction:<br><b style="color:#f59e42;">${base3.toFixed(2)}</b></div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; align-items:center; gap:60px;">
+            <div class="arrow">
+              <svg width="60" height="30"><line x1="0" y1="15" x2="60" y2="15" stroke="#888" stroke-width="2" marker-end="url(#arrowhead)"/><defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#888"/></marker></defs></svg>
+            </div>
+            <div class="arrow">
+              <svg width="60" height="30"><line x1="0" y1="15" x2="60" y2="15" stroke="#888" stroke-width="2" marker-end="url(#arrowhead)"/><defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#888"/></marker></defs></svg>
+            </div>
+            <div class="arrow">
+              <svg width="60" height="30"><line x1="0" y1="15" x2="60" y2="15" stroke="#888" stroke-width="2" marker-end="url(#arrowhead)"/><defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#888"/></marker></defs></svg>
+            </div>
+          </div>
+          <div class="meta-block block" style="margin-top:10px;">
+            <div class="label">Meta Learner</div>
+            <div style="margin-bottom:8px;">Weights:
+              <input class="weight-input" type="number" min="0" max="2" step="0.1" value="${state.weights[0]}" id="w0" />
+              <input class="weight-input" type="number" min="0" max="2" step="0.1" value="${state.weights[1]}" id="w1" />
+              <input class="weight-input" type="number" min="0" max="2" step="0.1" value="${state.weights[2]}" id="w2" />
+            </div>
+            <div class="label">Meta Output:</div>
+            <div style="font-size:1.3em; color:#e11d48;"><b>${meta.toFixed(2)}</b></div>
+            <div class="formula">Meta = (${preds.map((p,i)=>`${p.toFixed(2)}×${state.weights[i]}`).join(' + ')}) / (${state.weights.join(' + ')})</div>
+          </div>
+        </div>
+        <div class="output-row">
+          <b>Base Models Used:</b> Linear models with different coefficients.<br>
+          <b>Meta-learner:</b> Weighted average of base predictions (weights adjustable above).
+        </div>
+      `;
+      document.getElementById('sample-slider').addEventListener('input', e => {
+        state.sample = parseFloat(e.target.value);
+        render(state);
+      });
+      [0,1,2].forEach(i => {
+        document.getElementById('w'+i).addEventListener('input', e => {
+          state.weights[i] = parseFloat(e.target.value);
+          render(state);
+        });
+      });
+    }
+    const state = { sample: 0.5, weights: [1,1,1] };
+    render(state);
+  </script>
 </body>
 </html>
